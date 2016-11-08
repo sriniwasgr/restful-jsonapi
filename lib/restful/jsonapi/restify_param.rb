@@ -8,14 +8,16 @@ module Restful
       end
       
       #handle multiple params
-      def batch_restify_param(param_key, record)
-        ActionController::Parameters.new(param_key => restify_data(param_key, record))
+      def batch_restify_param(param_key, value)
+        ActionController::Parameters.new(param_key => restify_data(param_key, value))
       end
 
       private
 
-      def restify_data(param_key, record = params)
-        value = record.clone[:data]
+      def restify_data(param_key, value = params)
+        if value == params
+          value = params.clone[:data] # leave params alone
+        end
         value.delete(:type)
         new_params = ActionController::Parameters.new
         # relationships
