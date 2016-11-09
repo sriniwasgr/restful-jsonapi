@@ -6,30 +6,32 @@ module Restful
       def restify_param(param_key)
         ActionController::Parameters.new(param_key => restify_data(param_key))
       end
-      
+
       #handle multiple params
-      def batch_restify_param(param_key, value)
-        ActionController::Parameters.new(param_key => restify_data(param_key, value))
+      def batch_restify_param(param_key, record)
+        ActionController::Parameters.new(param_key => restify_data(param_key, record))
       end
 
       private
 
-      def restify_data(param_key, value = params)
-        if value == params
-          value = params.clone[:data] # leave params alone
+      def restify_data(param_key, record = params)
+        if record == params
+          record = params.clone[:data] # leave params alone
+        elsif params["_json"].present? # handle batch restify
+          record = record.clone[:data]
         end
-        value.delete(:type)
+        record.delete(:type)
         new_params = ActionController::Parameters.new
         # relationships
-        if value.has_key? :relationships
-          value.delete(:relationships).each do |relationship_name, relationship_data|
+        if record.has_key? :relationships
+          record.delete(:relationships).each do |relationship_name, relationship_data|
             new_data = restify_relationship(relationship_name, relationship_data)
             new_params.merge! new_data if new_data.present?
           end
         end
         # attributes
-        attributes = value.has_key?(:attributes) ? value[:attributes] : value
-        attributes.merge!(id: value[:id]) if value[:id]
+        attributes = record.has_key?(:attributes) ? record[:attributes] : record
+        attributes.merge!(id: record[:id]) if record[:id]
         attributes.transform_keys!(&:underscore)
         new_params.merge!(attributes)
         new_params
